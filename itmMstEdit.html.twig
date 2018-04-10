@@ -1,0 +1,228 @@
+{# @var app \Symfony\Bridge\Twig\AppVariable #}
+{% extends 'Mst/_newMst01.html.twig' %}
+
+{% set baseTemplateName = 'ボディマスタ' %}
+
+{% block mainContents %}
+    <div class="p_breadcrumb">
+        <ol class="breadcrumb_listWrap">
+            <li class="breadcrumb_list" itemscope="" itemtype="http://data-vocabulary.org/breadcrumb">
+                <a href="{{ path('app_top') }}" itemprop="url">
+                    <span itemprop="title">トップ</span>
+                </a>
+            </li>
+            <li class="breadcrumb_list is-breadcrumb_list-active">
+                <a href="{{ path('app_itm_mst_list') }}" itemprop="url">
+                    <span itemprop="title">ボディマスタ一覧</span>
+                </a>
+            </li>
+            <li class="breadcrumb_list is-breadcrumb_list-active">
+                ボディマスタ{% if p.id %}編集:{{ p.id }}{% else %}追加{% endif %}
+            </li>
+        </ol>
+    </div>
+    <section class="mst01_mainWrap">
+        <form class="form-inline" action="" method="post" id="js-edit-form" enctype="multipart/form-data">
+            <div class="l-messageArea">
+                {{ include('Mst/_messageArea.html.twig', with_context = false) }}
+                {{ form_errors(form) }}
+            </div>
+            <div id="js-prdctEditTableArea" class="mainWrap_prdctInfoArea-some">
+                <h3 class="mainWrap_prdctInfoAreaTitle">基本情報</h3>
+                <table class="p_table">
+                    <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>説明</th>
+                        <th>JAN</th>
+                        <th>品番</th>
+                        <th>型番</th>
+                        <th>メーカー</th>
+                        {% if editablePlatformPreset() %}
+                            <th>プラットフォームプリセット</th>
+                        {% endif %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td aria-label="名称">
+                            <div class="table_tdInner">
+                                {{ form_widget(form.name, {attr: {size: 30}}) }}
+                            </div>
+                        </td>
+                        <td aria-label="説明">
+                            <div class="table_tdInner">
+                                {{ form_widget(form.description, {attr: {cols: 50, rows: 3}}) }}
+                            </div>
+                        </td>
+                        <td aria-label="JAN">
+                            <div class="table_tdInner">
+                                {{ form_widget(form.jan, {attr: {size: 15}}) }}
+                            </div>
+                        </td>
+                        <td aria-label="品番">
+                            <div class="table_tdInner">
+                                {{ form_widget(form.partNumber, {attr: {size: 15}}) }}
+                            </div>
+                        </td>
+                        <td aria-label="型番">
+                            <div class="table_tdInner">
+                                {{ form_widget(form.modelNumber, {attr: {size: 15}}) }}
+                            </div>
+                        </td>
+                        <td aria-label="メーカー">
+                            <div class="table_tdInner">
+                                {{ form_widget(form.maker) }}
+                            </div>
+                        </td>
+                        {% if editablePlatformPreset() %}
+                            <td aria-label="プラットフォームプリセット">
+                                <div class="table_tdInner">
+                                    <label>{{ form_widget(form.isPlatformPreset) }} はい</label>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mainWrap_prdctInfoArea-some">
+                <h3 class="mainWrap_prdctInfoAreaTitle">商品画像</h3>
+                <table class="p_table">
+                    <thead>
+                    <tr>
+                        <th>商品画像</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <div class="table_tdInner">
+                                <div class="itemMstEdit_uploader">
+                                    <div class="uploader_uploadedImageArea">
+                                        <span>選択中のイメージ : </span><div id="js-uploader_deleteImg" class="uploader_deleteImg">削除</div>
+                                        <div id="js-uploader_uploadedImageWrap" class="uploader_uploadedImageWrap">
+                                            {% if pi.id %}
+                                                <img src="{{ vich_uploader_asset(pi, 'imageFile') }}" title="{{ pi.imageName }}" >
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="uploader_wrapVich">
+                                        {{ form_widget(imageForm.imageDelete) }}
+                                        {{ form_widget(imageForm.imageFile) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="js-admin__edit-area" class="mainWrap_prdctInfoArea-some">
+                <h3 class="mainWrap_prdctInfoAreaTitle">商品カテゴリ</h3>
+                <div>
+                    <table class="p_table">
+                        <thead>
+                        <tr>
+                            <th>商品カテゴリ</th>
+                            <th>プラットフォームプリセット</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <button type="button" @click="addDetail()">カテゴリ追加</button>
+                        <tr v-for="(detail, detailIdx) in details">
+                            <input type="hidden" name="detailIdx[]" :value="detailIdx">
+                            <button type="button" @click="removeDetail(detail)">削除</button>
+                            <input type="hidden" :name="`detail_id[${detailIdx}]`" v-model="detail.id">
+                            <td class="admin__prop">
+                                <div class="table_tdInner">
+                                    <select :name="`detail_name[${detailIdx}]`" v-model="detail.name">
+                                        <option value="" disabled></option>
+                                        {% for pc in option %}
+                                            <option value="{{ pc.id }}">名称：{{ pc.name }}　説明：{{ pc.description }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </td>
+                            <td class="admin__prop">
+                                <div class="table_tdInner">
+                                    {#<input type="text" :name="`detail_description[${detailIdx}]`" v-model="detail.description">#}
+                                </div>
+                            </td>
+                            <td class="admin__prop">
+                                {% if editablePlatformPreset() %}
+                                    <div class="table_tdInner">
+                                        <input type="checkbox" :name="`detail_isPlatformPreset[${detailIdx}]`" v-model="detail.isPlatformPreset">
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% if p.id %}
+                <div id="js-processEditTableArea" class="mainWrap_prdctInfoArea-some">
+                    <h3 class="mainWrap_prdctInfoAreaTitle">管理情報</h3>
+                    <div class="mainWrap_prdctInfoAreaInner">
+                        <table class="p_table">
+                            <thead>
+                            <tr>
+                                <th>作成日時</th>
+                                <th>更新日時</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td :aria-label="作成日時">
+                                    <div class="table_tdInner">
+                                        <div>{{ p.createdAt|date('Y-m-d H:i:s') }}</div>
+                                    </div>
+                                </td>
+                                <td :aria-label="更新日時">
+                                    <div class="table_tdInner">
+                                        <div>{{ p.updatedAt|date('Y-m-d H:i:s') }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+            {{ form_widget(form._token) }}
+            {{ form_widget(imageForm._token) }}
+        </form>
+        <form action="" method="post" id="js-delete-form">
+            <input type="hidden" name="delete" value="1">
+        </form>
+        <div class="mainWrap_bottomBtnArea">
+            <div class="mainWrap_bottomBtnAreaLeft">
+                {% if form.vars.value.id %}
+                    <button type="submit" class="mainWrap_deleteBtn" form="js-delete-form">削除</button>
+                {% endif %}
+                <a href="{{ path('app_itm_mst_list', {'filter': filter}) }}">
+                    <div class="mainWrap_cancelBtn">キャンセル</div>
+                </a>
+            </div>
+            <div class="mainWrap_bottomBtnAreaRight">
+                <button type="submit" class="mainWrap_registerBtn" form="js-edit-form">保存</button>
+            </div>
+        </div>
+    </section>
+{% endblock mainContents %}
+
+{% block leftNav %}
+    {{ include('Mst/_leftNavDummy.html.twig', with_context = false) }}
+{% endblock leftNav %}
+
+{% block foot_script %}
+    <script src="{{ asset('build/js/Mst/itemMstEdit.js') }}"></script>
+    <script>
+        // $(function() {
+        //     $('#js-delete-form').on('submit', function() {
+        //         return confirm('削除しますか？');
+        //     });
+        // });
+    </script>
+{% endblock foot_script %}
